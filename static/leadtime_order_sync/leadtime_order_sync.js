@@ -7,11 +7,13 @@ $(function () {
   }
 
   // Helper: append a log message to the actionLogs div
-  function logMessage(message, type) {
+  function logMessage(message, type, url = null) {
     const alertClass = type === "success" ? "alert-success" : "alert-danger";
+    // Append optional URL if provided
+    const urlPart = url ? ` <a href="${url}" target="_blank">(View)</a>` : "";
     const time = new Date().toLocaleTimeString();
     $("#actionLogs").append(
-      `<div class="alert ${alertClass} p-2 my-1"><strong>[${time}]</strong> ${message}</div>`,
+      `<div class="alert ${alertClass} p-2 my-1"><strong>[${time}]</strong> ${message}${urlPart}</div>`,
     );
   }
 
@@ -67,6 +69,7 @@ $(function () {
           logMessage(
             response.message || "Stock synced successfully.",
             "success",
+            response.order_url || null,
           );
         } else {
           logMessage(

@@ -13,7 +13,7 @@ from company.models import Company
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.urls import path
+from django.urls import path, reverse
 from order.models import SalesOrder, SalesOrderAllocation, SalesOrderLineItem, SalesOrderShipment
 from part.models import Part
 from plugin import InvenTreePlugin
@@ -343,13 +343,14 @@ class LeadtimeOrderSyncPlugin(
                 status=500,
             )
 
-        order_url = f"/order/sales-order/{order.pk}/"
+        order_url = reverse("order-sales-order-detail", args=[order.pk])
+        order_url = request.build_absolute_uri(order_url)
         msg = f"Sales Order {order.reference or order.pk} created with {order.lines.count()} line items."
         if not location_obj:
             msg += " (stock not allocated - no default location configured)."
         else:
             msg += " (stock allocated from default location where available)."
-        return JsonResponse({"success": True, "message": msg})
+        return JsonResponse({"success": True, "message": msg, "order_url":order_url})
 
 
     def sync_stock(self, request):
