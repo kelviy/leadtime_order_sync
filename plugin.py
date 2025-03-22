@@ -188,10 +188,12 @@ class LeadtimeOrderSyncPlugin(
                 
                 pre_alloc = 0
                 for item in stock_items:
-                    pre_alloc += sum(alloc.quantity for alloc in item.allocations.all())
+
+                    sales_allocs = SalesOrderAllocation.objects.filter(item=item)
+                    pre_alloc += sum(alloc.quantity for alloc in sales_allocs)
 
                 total_qty = int(sum(item.quantity for item in stock_items))
-                available_qty = max(total_qty - pre_alloc, 0)
+                available_qty = int(max(total_qty - pre_alloc, 0))
                 # Default calculated SoH = current available stock minus Qty Sending (not below 0)
                 # Do not allow negative stock on hand
                 new_soh = int(max(available_qty - qty_sending, 0))
