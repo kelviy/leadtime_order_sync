@@ -1,3 +1,5 @@
+// Run cp_static after editing static folder content. Correct content is in another place for docker installation. Hence the script will move to correct place.
+// cp_static.sh to be run from base plugin folder (leadtime_order_sync)
 $(function () {
   // CSRF token from cookie
   function getCsrfToken() {
