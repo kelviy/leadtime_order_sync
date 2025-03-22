@@ -15,7 +15,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.urls import path
-from order.models import SalesOrder, SalesOrderAllocation, SalesOrderLineItem
+from order.models import SalesOrder, SalesOrderAllocation, SalesOrderLineItem, SalesOrderShipment
 from part.models import Part
 from plugin import InvenTreePlugin
 from plugin.mixins import APICallMixin, NavigationMixin, SettingsMixin, UrlsMixin
@@ -285,8 +285,9 @@ class LeadtimeOrderSyncPlugin(
         try:
             for item in matched_items:
                 part_obj = Part.objects.get(pk=item["part"])
+                notes = "Imported info:\n DC=" + item.get("dc") + "\n Qty Sending=" + item.get("qty_sending")
                 SalesOrderLineItem.objects.create(
-                    order=order, part=part_obj, quantity=item.get("qty_sending", 0)
+                    order=order, part=part_obj, quantity=item.get("qty_sending", 0), notes=notes, sale_price_currency="ZAR", target_date=target_date
                 )
         except Exception as e:
             logging.exception("Adding line items failed")
@@ -302,6 +303,10 @@ class LeadtimeOrderSyncPlugin(
             if location_name
             else None
         )
+
+        #default create on shipment and all items added to shipment
+        shipment = SalesOrderShipment.objects.create(delivery_date=target_date, order=order)
+
         for line in order.lines.all():
             allocate_qty = line.quantity
             if allocate_qty <= 0 or not location_obj:
@@ -318,12 +323,12 @@ class LeadtimeOrderSyncPlugin(
                     else allocate_qty
                 )
                 SalesOrderAllocation.objects.create(
-                    line=line, item=stock_item, quantity=alloc_qty
+                    line=line, item=stock_item, quantity=alloc_qty, shipment=shipment
                 )
                 allocate_qty -= alloc_qty
 
         order_url = f"/order/sales-order/{order.pk}/"
-        msg = f"Sales Order {order.reference or order.pk} created with {order.lines.count()} line items"
+        msg = f"Sales Order {order.reference or order.pk} created with {order.lines.count()} line items."
         if not location_obj:
             msg += " (stock not allocated - no default location configured)."
         else:
