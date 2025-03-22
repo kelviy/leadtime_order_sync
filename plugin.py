@@ -40,7 +40,7 @@ class LeadtimeOrderSyncPlugin(
     DESCRIPTION = "Import Takealot picking list CSV, create Sales Order for 'TakeALot' customer, allocate stock, and sync stock levels to Takealot."
     VERSION = "1.0.0"
     AUTHOR = "Your Name"
-    MIN_VERSION = "0.17.2"  # InvenTree minimum version
+    MIN_VERSION = "0.17.8"  # InvenTree minimum version
 
     # Navigation: Add link in InvenTree UI navigation bar
     NAVIGATION = [
