@@ -331,8 +331,9 @@ class LeadtimeOrderSyncPlugin(
                 #attempts to add all stock it found in default location
                 for stock_item in stock_qs:
                     
+                    sales_allocs = SalesOrderAllocation.objects.filter(item=stock_item)
+                    pre_alloc = sum(alloc.quantity for alloc in sales_allocs)
 
-                    pre_alloc = sum(alloc.quantity for alloc in stock_item.allocations.all())
 
                     available_qty = max(stock_item.quantity - pre_alloc, 0)
                     # add stock quantity capped at allocate value
