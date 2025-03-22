@@ -285,7 +285,7 @@ class LeadtimeOrderSyncPlugin(
         try:
             for item in matched_items:
                 part_obj = Part.objects.get(pk=item["part"])
-                notes = "Imported info:\n DC=" + item.get("dc") + "\n Qty Sending=" + item.get("qty_sending")
+                notes = "Imported info:\n DC=" + str(item.get("dc")) + "\n Qty Sending=" +str(item.get("qty_sending"))
                 SalesOrderLineItem.objects.create(
                     order=order, part=part_obj, quantity=item.get("qty_sending", 0), notes=notes, sale_price_currency="ZAR", target_date=target_date
                 )
