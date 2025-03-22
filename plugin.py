@@ -343,7 +343,7 @@ class LeadtimeOrderSyncPlugin(
                 status=500,
             )
 
-        order_url = path(f"order/sales-order/{order.pk}")
+        order_url = f"/order/sales-order/{order.pk}"
         order_url = request.build_absolute_uri(order_url)
         msg = f"Sales Order {order.reference or order.pk} created with {order.lines.count()} line items."
         if not location_obj:
