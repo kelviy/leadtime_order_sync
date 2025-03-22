@@ -98,12 +98,12 @@
                       {% endif %}
                       {{ item.name }}
                     </td>
-                    <td>{{ item.dc }}</td>
+                    <td class="text-center">{{ item.dc }}</td>
                     <td class="text-center">{{ item.qty_required }}</td>
                     <td class="text-center">{{ item.qty_sending }}</td>
                     <td class="text-center">{{ item.available }}</td>
-                    <td>
-                      <input type="number" name="soh_part_{{ item.part }}" value="{{ item.calculated_soh }}"
+                    <td class="text-center">
+                      <input class="text-center" type="number" name="soh_part_{{ item.part }}" value="{{ item.calculated_soh }}"
                              class="form-control form-control-sm" style="width:6em; display:inline-block;">
                     </td>
                   </tr>
