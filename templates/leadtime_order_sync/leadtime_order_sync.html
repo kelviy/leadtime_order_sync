@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}  {# InvenTree base template provides common structure #}
+
+{% block title %}Leadtime Order Sync{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h3 class="mb-3">{{ title }}</h3>
+
+  {# Display any error/warning messages #}
+  {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+  {% if warning %}
+    <div class="alert alert-warning">{{ warning }}</div>
+  {% endif %}
+
+  {# Upload Form (shown when no data has been parsed yet) #}
+  <form method="post" enctype="multipart/form-data" class="">
+    {% csrf_token %}
+     <div class="d-flex align-items-center mb-2">
+        <label for="csvfile" class="me-2 fw-bold">CSV File:</label>
+        <input type="file" name="csvfile" id="csvfile" accept=".csv" class="form-control me-2" style="width: auto;">
+        <button type="submit" class="btn btn-primary">Upload</button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center">
+          <label for="target_date" class="me-2 fw-bold">Target Order Date:</label>
+          <input type="date" name="target_date" id="target_date" class="form-control" 
+                 value="{{ target_date|default:today|stringformat:'Y-m-d' }}" 
+                 style="width: auto;">
+      </div>
+      <p class="mb-0"><strong>Selected Target Order Date:</strong> {{ target_date|default:"Not Selected"|date:"Y-m-d" }}</p>
+   </div>
+  </form>
+  {% if not matched_items or not unmatched_items %}
+  <p class="text-muted mt-5">Select a Takealot picking-list CSV and a target delivery date, then click <em>Upload</em>.</p>
+  <p class="text-muted">If no target delivery date is selected then today's date is chosen</p>
+  {% endif %}
+
+  {% if unmatched_items and unmatched_items|length > 0 %}
+    <div class="mt-3 mb-3">
+      <a class="btn btn-outline-secondary" data-bs-toggle="collapse" href="#unmatchedPanel" role="button" aria-expanded="false" aria-controls="unmatchedPanel">
+        Unmatched Items ({{ unmatched_items|length }})
+      </a>
+      <div class="collapse mt-2" id="unmatchedPanel">
+        <div class="card card-body p-2">
+          <ul class="mb-0">
+            {% for um in unmatched_items %}
+              <li>
+                <strong>{{ um.product_title }}</strong> – SKU: <code>{{ um.sku }}</code>, TSIN: <code>{{ um.tsin }}</code>,
+                DC: {{ um.dc }}, Qty Required: {{ um.qty_required }}, Qty Sending: {{ um.qty_sending }}
+              </li>
+            {% endfor %}
+          </ul>
+          <small class="text-muted">These items could not be matched to any Part in InvenTree.</small>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if matched_items %}
+  <h3 class="mb-3">Matched Parts Table</h3>
+    {# Review Table (shown after CSV is parsed) #}
+    <div id="actionContainer"
+      data-create-url="{% url 'plugin:leadtimeordersync:create-order' %}"
+      data-sync-url="{% url 'plugin:leadtimeordersync:sync-stock' %}"> 
+      <div class="card">
+        <div class="card-body p-2">
+          <form id="orderForm">
+            {% csrf_token %}
+            <div class="table-responsive">
+              <table class="table table-striped table-sm">
+                <thead class="table-light">
+                  <tr>
+                    <th>Product Name</th>
+                    <th>DC</th>
+                    <th>Qty Required</th>
+                    <th>Qty Sending</th>
+                    <th>Available Stock</th>
+                    <th>Calculated SoH</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in matched_items %}
+                  <tr>
+                    <td>
+                      {% if item.image_url %}
+                        <img src="{{ item.image_url }}" alt="{{ item.name }}" style="max-height:40px; max-width:40px;" class="me-2">
+                      {% endif %}
+                      {{ item.name }}
+                    </td>
+                    <td>{{ item.dc }}</td>
+                    <td>{{ item.qty_required }}</td>
+                    <td>{{ item.qty_sending }}</td>
+                    <td>{{ item.available }}</td>
+                    <td>
+                      <input type="number" name="soh_part_{{ item.part }}" value="{{ item.calculated_soh }}"
+                             class="form-control form-control-sm" style="width:6em; display:inline-block;">
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </form>
+          
+          <div class="mb-3">
+            <button id="createOrderBtn" type="button" class="btn btn-success"
+              {% if not has_matches %}disabled{% endif %}>
+              Create Sales Order
+            </button>
+            <button id="syncStockBtn" type="button" class="btn btn-info"
+              {% if not has_matches %}disabled{% endif %}>
+              Sync Calculated SoH to Takealot
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    {# Log output area #}
+    <div id="actionLogs" class="mt-3"></div>  
+    <script defer type="text/javascript" src="{% static 'leadtime_order_sync/leadtime_order_sync.js' %}"></script>
+  {% endif %}
+</div>
+{% endblock %}
