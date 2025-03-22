@@ -15,7 +15,7 @@
     <div class="alert alert-warning">{{ warning }}</div>
   {% endif %}
 
-  {# Upload Form (shown when no data has been parsed yet) #}
+  {# Upload Form #}
   <form method="post" enctype="multipart/form-data" class="">
     {% csrf_token %}
      <div class="d-flex align-items-center mb-2">
@@ -34,14 +34,16 @@
       <p class="mb-0"><strong>Selected Target Order Date:</strong> {{ target_date|default:"Not Selected"|date:"Y-m-d" }}</p>
    </div>
   </form>
+
+  {# Comments. Only shown when items have not been added #}
   {% if not matched_items and not unmatched_items %}
-  <p class="text-muted mt-5">- Select a Takealot picking-list CSV and a target delivery date, then click <em>Upload</em>.</p>
-  <p class="text-muted"> - Clicking Upload will erase any previous session's memory and load CSV and target delivery date. Refreshing will also erase previous session's memory. </p>
-  <p class="text-muted">- If no target delivery date is selected then today's date is chosen</p>
-  <p class="text-muted"> - Pick a default stock location from plugin settings. The plugin will attempt to automatically allocate stock it finds in the default location. </p>
-  <p class="text-muted"> - "Sync SoH to TakeALot" will send a batch request to TakeALot to update the value in Calculated SoH. 
-  <p class="text-muted"> - Calculated SoH can be manually changed </p>
-  <p class="text-muted"> - Currently "Sync SoH to TakeALot" is not yet fully implemented. </p>
+  <p class="text-info mt-5">- Select a Takealot picking-list CSV and a target delivery date, then click <em>Upload</em>.</p>
+  <p class="text-info"> - Refreshing will erase any previous session's memory.</p>
+  <p class="text-warning">- If no target delivery date is selected then today's date is chosen</p>
+  <p class="text-warning"> - You can pick a default stock location from plugin settings. The plugin will attempt to automatically allocate stock it finds in the default location. </p>
+  <p class="text-info"> - "Sync SoH to TakeALot" will send a batch request to TakeALot to update the value in Calculated SoH. 
+  <p class="text-info"> - Calculated SoH can be manually changed </p>
+  <p class="text-danger"> - Currently "Sync SoH to TakeALot" is not yet fully implemented. </p>
   {% endif %}
 
   {% if unmatched_items and unmatched_items|length > 0 %}

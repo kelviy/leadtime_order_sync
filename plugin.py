@@ -8,7 +8,7 @@ import datetime
 import logging
 import os
 
-import requests  # for calling Takealot API
+import requests  
 from company.models import Company
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -39,7 +39,7 @@ class LeadtimeOrderSyncPlugin(
     TITLE = "Leadtime Order Sync"
     DESCRIPTION = "Import Takealot picking list CSV, create Sales Order for 'TakeALot' customer, allocate stock, and sync stock levels to Takealot."
     VERSION = "1.0.0"
-    AUTHOR = "Your Name"
+    AUTHOR = "Kelvin Wei"
     MIN_VERSION = "0.17.8"  # InvenTree minimum version
 
     # Navigation: Add link in InvenTree UI navigation bar
@@ -90,15 +90,9 @@ class LeadtimeOrderSyncPlugin(
                 request, "leadtime_order_sync/leadtime_order_sync.html", context
             )
 
-        # Handle CSV upload POST
+        # Handle CSV upload and date POST
         csv_file = request.FILES.get("csvfile")
         target_date_str = request.POST.get("target_date", "")
-        if not csv_file:
-            # No file provided – return with an error message
-            context["error"] = "Please upload a CSV file."
-            return render(
-                request, "leadtime_order_sync/leadtime_order_sync.html", context
-            )
 
         # Attempt to parse target date
         try:
@@ -111,6 +105,14 @@ class LeadtimeOrderSyncPlugin(
             context["warning"] = "Invalid date format. Using today's date."
             target_date = datetime.date.today()
 
+        # Check for existence of csv_file
+        if not csv_file:
+            # No file provided – return with an error message
+            context["error"] = "Please upload a CSV file."
+            return render(
+                request, "leadtime_order_sync/leadtime_order_sync.html", context
+            )
+        
         # Read and parse CSV content
         try:
             data = csv_file.read().decode("utf-8")
@@ -237,6 +239,7 @@ class LeadtimeOrderSyncPlugin(
 
         return render(request, "leadtime_order_sync/leadtime_order_sync.html", context)
 
+
     def create_order(self, request):
         """Handle AJAX request to create a Sales Order with allocated stock."""
         data = request.session.get("leadtime_order_sync_data")
@@ -352,15 +355,6 @@ class LeadtimeOrderSyncPlugin(
     def sync_stock(self, request):
         """Handle AJAX request to push stock-on-hand updates to Takealot via API (batch update)."""
 
-        return JsonResponse( 
-                {
-                    "success": False, 
-                    "message": "This functionality is not yet ready for production"
-                },
-                status=400
-        )
-
-        ## Not fully implemented
         data = request.session.get("leadtime_order_sync_data")
         if not data or "matched_items" not in data:
             return JsonResponse(
@@ -389,6 +383,16 @@ class LeadtimeOrderSyncPlugin(
             leadtime_stock = [{"merchant_warehouse_id":TAKEALOT_WAREHOUSE_ID, "quantity": new_soh}]
             batch_payload.append({"sku": identifier, "leadtime_stock": leadtime_stock})
         payload = {"requests": batch_payload}
+
+        #debug to check payload
+        return JsonResponse( 
+                {
+                    "success": False, 
+                    "message": "This functionality is not yet ready for production"+ "\nWhat would've been sent: " + str(batch_payload)
+                },
+                status=400
+        )
+
 
         if not TAKEALOT_API_KEY or not TAKEALOT_API_BASE_URL:
             return JsonResponse(
