@@ -23,8 +23,9 @@ from stock.models import StockItem, StockLocation
 # Load Takealot API credentials from environment
 TAKEALOT_API_KEY = os.getenv("TAKEALOT_API_KEY")
 TAKEALOT_API_BASE_URL = os.getenv(
-    "TAKEALOT_API_BASE_URL", "https://seller-api.takealot.com/v1/"
+    "TAKEALOT_API_BASE_URL", "https://seller-api.takealot.com/v2/"
 )
+TAKEALOT_WAREHOUSE_ID = os.getenv("TAKEALOT_WAREHOUSE_ID")
 
 
 class LeadtimeOrderSyncPlugin(
@@ -336,6 +337,16 @@ class LeadtimeOrderSyncPlugin(
 
     def sync_stock(self, request):
         """Handle AJAX request to push stock-on-hand updates to Takealot via API (batch update)."""
+
+        return JsonResponse( 
+                {
+                    "success": False, 
+                    "message": "This functionality is not yet ready for production"
+                },
+                status=-1
+        )
+
+        ## Not fully implemented
         data = request.session.get("leadtime_order_sync_data")
         if not data or "matched_items" not in data:
             return JsonResponse(
@@ -359,10 +370,10 @@ class LeadtimeOrderSyncPlugin(
         batch_payload = []
         for item in matched_items:
             sku = item.get("sku") or ""
-            tsin = item.get("tsin") or ""
             new_soh = item.get("calculated_soh", 0)
-            identifier = sku if sku else tsin
-            batch_payload.append({"sku": identifier, "stock": new_soh})
+            identifier = sku 
+            leadtime_stock = [{"merchant_warehouse_id":TAKEALOT_WAREHOUSE_ID, "quantity": new_soh}]
+            batch_payload.append({"sku": identifier, "leadtime_stock": leadtime_stock})
         payload = {"requests": batch_payload}
 
         if not TAKEALOT_API_KEY or not TAKEALOT_API_BASE_URL:
