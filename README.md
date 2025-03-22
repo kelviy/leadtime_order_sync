@@ -6,7 +6,7 @@ The Plugin can:
 1. Create Sale Orders and related Delivery shipments from csv file
 2. Update Leadtime SoH using TakeALot API
 
-![image](https://github.com/user-attachments/assets/6fb1d058-d04d-47a5-b867-da40544e8351)
+![image](https://github.com/user-attachments/assets/8b183bf4-5982-485e-9200-f6211e6e1493)
 
 # Pre-config
 1. An existing inventree server must be running and plugin is added and enabled.
