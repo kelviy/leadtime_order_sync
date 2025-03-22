@@ -350,6 +350,8 @@ class LeadtimeOrderSyncPlugin(
             msg += " (stock not allocated - no default location configured)."
         else:
             msg += " (stock allocated from default location where available)."
+
+        msg += order_url
         return JsonResponse({"success": True, "message": msg, "order_url":order_url})
 
 
