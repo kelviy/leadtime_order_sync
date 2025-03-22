@@ -185,7 +185,13 @@ class LeadtimeOrderSyncPlugin(
             if part_obj:
                 # Calculate global stock count
                 stock_items = StockItem.objects.filter(part=part_obj, quantity__gt=0)
-                available_qty = int(sum(item.quantity for item in stock_items))
+                
+                pre_alloc = 0
+                for item in stock_items:
+                    pre_alloc += sum(alloc.quantity for alloc in item.allocations.all())
+
+                total_qty = int(sum(item.quantity for item in stock_items))
+                available_qty = max(total_qty - pre_alloc, 0)
                 # Default calculated SoH = current available stock minus Qty Sending (not below 0)
                 # Do not allow negative stock on hand
                 new_soh = int(max(available_qty - qty_sending, 0))
