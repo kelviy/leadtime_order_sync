@@ -36,7 +36,7 @@ $(function () {
           logMessage(
             response.message || "Sales order created successfully.",
             "success",
-            response.order_url || null,
+            response.order_url,
           );
         } else {
           logMessage(
