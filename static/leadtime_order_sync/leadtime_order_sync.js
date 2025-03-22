@@ -9,11 +9,13 @@ $(function () {
   // Helper: append a log message to the actionLogs div
   function logMessage(message, type, url = null) {
     const alertClass = type === "success" ? "alert-success" : "alert-danger";
-    // Append optional URL if provided
-    const urlPart = url ? ` <a href="${url}" target="_blank">(View)</a>` : "";
     const time = new Date().toLocaleTimeString();
+    // Wrap the entire message in an anchor if a URL is provided
+    const messageHtml = url 
+      ? `<a href="${url}" target="_blank" style="color: inherit; text-decoration: none;">${message}</a>` 
+      : message;
     $("#actionLogs").append(
-      `<div class="alert ${alertClass} p-2 my-1"><strong>[${time}]</strong> ${message}${urlPart}</div>`,
+      `<div class="alert ${alertClass} p-2 my-1"><strong>[${time}]</strong> ${messageHtml}</div>`
     );
   }
 
@@ -36,7 +38,7 @@ $(function () {
           logMessage(
             response.message || "Sales order created successfully.",
             "success",
-            response.order_url,
+            response.url,
           );
         } else {
           logMessage(
