@@ -36,6 +36,7 @@ $(function () {
           logMessage(
             response.message || "Sales order created successfully.",
             "success",
+            response.order_url || null,
           );
         } else {
           logMessage(
@@ -69,7 +70,6 @@ $(function () {
           logMessage(
             response.message || "Stock synced successfully.",
             "success",
-            response.order_url || null,
           );
         } else {
           logMessage(
