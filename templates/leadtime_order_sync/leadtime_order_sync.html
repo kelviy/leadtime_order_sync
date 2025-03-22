@@ -34,7 +34,7 @@
       <p class="mb-0"><strong>Selected Target Order Date:</strong> {{ target_date|default:"Not Selected"|date:"Y-m-d" }}</p>
    </div>
   </form>
-  {% if not matched_items or not unmatched_items %}
+  {% if not matched_items and not unmatched_items %}
   <p class="text-muted mt-5">Select a Takealot picking-list CSV and a target delivery date, then click <em>Upload</em>.</p>
   <p class="text-muted">If no target delivery date is selected then today's date is chosen</p>
   {% endif %}
