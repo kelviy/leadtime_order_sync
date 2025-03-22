@@ -343,7 +343,7 @@ class LeadtimeOrderSyncPlugin(
                     "success": False, 
                     "message": "This functionality is not yet ready for production"
                 },
-                status=-1
+                status=400
         )
 
         ## Not fully implemented
