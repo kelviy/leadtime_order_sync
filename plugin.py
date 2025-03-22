@@ -158,9 +158,9 @@ class LeadtimeOrderSyncPlugin(
 
         # Iterate through CSV rows to match parts
         for row in reader:
-            sku = row.get("SKU", "").strip()
+            sku = row.get("SKU", "").strip().lstrip('"').rstrip('"')
             tsin = row.get("TSIN", "").strip()
-            title = row.get("Product Title", "").strip()
+            title = row.get("Product Title", "").strip().lstrip('"').rstrip('"')
             dc = row.get("DC", "").strip()
             try:
                 qty_required = int(row.get("Qty Required", "").strip() or 0)
