@@ -5,7 +5,6 @@ Integrates Takealot CSV order import with InvenTree Sales Orders and stock sync.
 
 import csv
 import datetime
-import json
 import logging
 import os
 
