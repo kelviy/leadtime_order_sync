@@ -240,6 +240,8 @@ class LeadtimeOrderSyncPlugin(
     def create_order(self, request):
         """Handle AJAX request to create a Sales Order with allocated stock."""
         data = request.session.get("leadtime_order_sync_data")
+        #checks with data.
+        # If data contains necessary information. 
         if not data or "matched_items" not in data:
             return JsonResponse(
                 {
@@ -250,6 +252,7 @@ class LeadtimeOrderSyncPlugin(
             )
         matched_items = data["matched_items"]
         target_date_str = data.get("target_date")
+        # data is valid - else defualt value of today
         try:
             target_date = (
                 datetime.datetime.strptime(target_date_str, "%Y-%m-%d").date()
@@ -258,7 +261,7 @@ class LeadtimeOrderSyncPlugin(
             )
         except:
             target_date = datetime.date.today()
-
+        # Customer is valid
         customer = Company.objects.filter(
             name__iexact="TakeALot", is_customer=True
         ).first()
@@ -270,7 +273,8 @@ class LeadtimeOrderSyncPlugin(
                 },
                 status=400,
             )
-
+       
+        # Create new Sales Order
         try:
             order = SalesOrder.objects.create(
                 customer=customer, target_date=target_date
@@ -282,13 +286,52 @@ class LeadtimeOrderSyncPlugin(
                 status=500,
             )
 
+        # Default Stock location is valid else default None for shipment
+        location_name = self.get_setting("DEFAULT_STOCK_LOCATION")
+        location_obj = (
+            StockLocation.objects.filter(pk=location_name).first()
+            if location_name
+            else None
+        )
+        #default create on shipment and all items added to shipment
+        shipment = SalesOrderShipment.objects.create(delivery_date=target_date, order=order)
+
+        # loop to add line item + allocate stock + allocate to shipment
         try:
             for item in matched_items:
+                # add line item
                 part_obj = Part.objects.get(pk=item["part"])
                 notes = "Imported:\n DC=" + str(item.get("dc")) + "\n Qty Sending=" +str(item.get("qty_sending"))
-                SalesOrderLineItem.objects.create(
-                    order=order, part=part_obj, quantity=item.get("qty_required", 0), notes=notes, sale_price_currency="ZAR", target_date=target_date
+                qty_required = item.get("qty_required", 0)
+
+                line = SalesOrderLineItem.objects.create(
+                    order=order, part=part_obj, quantity=qty_required, notes=notes, sale_price_currency="ZAR", target_date=target_date
                 )
+                
+                # allocate stock and allocate to shipment
+                allocate_qty = item.get("qty_sending", 0)
+                # skip is default not configured or allocation is 0
+                if allocate_qty <= 0 or not location_obj:
+                    continue
+                #get all stock that is in default location
+                stock_qs = StockItem.objects.filter(
+                    part=part_obj, location=location_obj, quantity__gt=0
+                )
+                #attempts to add all stock it found in default location
+                for stock_item in stock_qs:
+                    if allocate_qty <= 0:
+                        break
+                    # add stock quantity capped at allocate value
+                    alloc_qty = (
+                        stock_item.quantity
+                        if stock_item.quantity < allocate_qty
+                        else allocate_qty
+                    )
+
+                    SalesOrderAllocation.objects.create(
+                        line=line, item=stock_item, quantity=alloc_qty, shipment=shipment
+                    )
+                    allocate_qty -= alloc_qty
         except Exception as e:
             logging.exception("Adding line items failed")
             order.delete()
@@ -297,36 +340,6 @@ class LeadtimeOrderSyncPlugin(
                 status=500,
             )
 
-        location_name = self.get_setting("DEFAULT_STOCK_LOCATION")
-        location_obj = (
-            StockLocation.objects.filter(pk=location_name).first()
-            if location_name
-            else None
-        )
-
-        #default create on shipment and all items added to shipment
-        shipment = SalesOrderShipment.objects.create(delivery_date=target_date, order=order)
-
-        for line in order.lines.all():
-            allocate_qty = line.quantity
-            if allocate_qty <= 0 or not location_obj:
-                continue
-            stock_qs = StockItem.objects.filter(
-                part=line.part, location=location_obj, quantity__gt=0
-            )
-            for stock_item in stock_qs:
-                if allocate_qty <= 0:
-                    break
-                alloc_qty = (
-                    stock_item.quantity
-                    if stock_item.quantity < allocate_qty
-                    else allocate_qty
-                )
-                SalesOrderAllocation.objects.create(
-                    line=line, item=stock_item, quantity=alloc_qty, shipment=shipment
-                )
-                allocate_qty -= alloc_qty
-
         order_url = f"/order/sales-order/{order.pk}/"
         msg = f"Sales Order {order.reference or order.pk} created with {order.lines.count()} line items."
         if not location_obj:
@@ -334,6 +347,7 @@ class LeadtimeOrderSyncPlugin(
         else:
             msg += " (stock allocated from default location where available)."
         return JsonResponse({"success": True, "message": msg})
+
 
     def sync_stock(self, request):
         """Handle AJAX request to push stock-on-hand updates to Takealot via API (batch update)."""
