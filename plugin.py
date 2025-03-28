@@ -3,11 +3,7 @@ Plugin: Leadtime Order Sync
 Integrates Takealot CSV order import with InvenTree Sales Orders and stock sync.
 """
 
-import csv
-import datetime
-import logging
-import os
-import requests  
+import csv, datetime, logging, requests
 from company.models import Company
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -74,10 +70,6 @@ class LeadtimeOrderSyncPlugin(
         },
 
     }
-    # Load Takealot API credentials from environment
-    #TAKEALOT_API_KEY = os.getenv("TAKEALOT_API_KEY")
-    #TAKEALOT_API_BASE_URL = os.getenv("TAKEALOT_API_BASE_URL")
-    #TAKEALOT_WAREHOUSE_ID = os.getenv("TAKEALOT_WAREHOUSE_ID")
     def setup_urls(self):
         """Define custom URL endpoints for this plugin's views."""
         return [
@@ -162,24 +154,16 @@ class LeadtimeOrderSyncPlugin(
         #checks with data.
         # If data contains necessary information. 
         if not data or "matched_items" not in data:
-            return JsonResponse(
-                {
-                    "success": False,
-                    "message": "No data to process. Please upload a CSV first.",
-                },
-                status=400,
-            )
+            return JsonResponse({ "success": False, "message": "No data to process. Please upload a CSV first.",}, status=400 )
+
         matched_items = data["matched_items"]
         target_date_str = data.get("target_date")
         # data is valid - else defualt value of today
-        try:
-            target_date = (
-                datetime.datetime.strptime(target_date_str, "%Y-%m-%d").date()
-                if target_date_str
-                else datetime.date.today()
-            )
-        except:
-            target_date = datetime.date.today()
+        target_date, warning_msg = self.parse_target_date(target_date_str)
+        
+        if warning_msg:
+            self.context["warning"].append(warning_msg)
+
         # Customer is valid
         customer = Company.objects.filter(
             name__iexact="TakeALot", is_customer=True
@@ -266,9 +250,8 @@ class LeadtimeOrderSyncPlugin(
                 status=500,
             )
 
-        order_url = f"/order/sales-order/{order.pk}/"
-        order_url = request.build_absolute_uri(order_url)
-        msg = f"Sales Order {order.reference or order.pk} created with {order.lines.count()} line items."
+        order_url = request.build_absolute_uri(f"/order/sales-order/{order.pk}/")
+        msg = f"Sales Order {order.reference or order.pk} created with {order.lines.count()} line items. URL: "
         if not location_obj:
             msg += " (stock not allocated - no default location configured)."
         else:
@@ -291,7 +274,7 @@ class LeadtimeOrderSyncPlugin(
                 status=400,
             )
         matched_items = data["matched_items"]
-
+        # Update calculated stock levels based on request POST data
         for item in matched_items:
             field_name = f"soh_part_{item['part']}"
             if field_name in request.POST:
@@ -300,38 +283,39 @@ class LeadtimeOrderSyncPlugin(
                 except:
                     continue
                 item["calculated_soh"] = max(new_soh, 0)
+        
+        batch_payload, error_msg = self.generate_batch_payload(matched_items)
 
-        batch_payload = []
-        for item in matched_items:
-            sku = item.get("sku") or ""
-            new_soh = item.get("calculated_soh", 0)
-            identifier = sku 
-            leadtime_stock = [{"merchant_warehouse_id":LeadtimeOrderSyncPlugin.TAKEALOT_WAREHOUSE_ID, "quantity": new_soh}]
-            batch_payload.append({"sku": identifier, "leadtime_stock": leadtime_stock})
+        if error_msg:
+            return JsonResponse ( { "success" : False, "message": error_msg }, status=400 )
+
         payload = {"requests": batch_payload}
 
         #debug to check payload remove when api is imported
-        return JsonResponse( 
-                {
-                    "success": False, 
-                    "message": "This functionality is not yet ready for production"+ "\nWhat would've been sent: " + str(batch_payload)
-                },
-                status=400
-        )
+        # return JsonResponse( 
+        #         {
+        #             "success": False, 
+        #             "message": "This functionality is not yet ready for production"+ "\nWhat would've been sent: " + str(batch_payload)
+        #         },
+        #         status=400
+        # )
+        
+        api_key = self.get_setting("TAKEALOT_API_KEY")
+        api_endpoint = self.get_setting("TAKEALOT_API_ENDPOINT")
+        warehouse_id = self.get_setting("TAKEALOT_WAREHOUSE_ID")
 
-
-        if not TAKEALOT_API_KEY or not TAKEALOT_API_BASE_URL:
+        if not api_key or not api_endpoint:
             return JsonResponse(
                 {
                     "success": False,
-                    "message": "Takealot API credentials not configured. Check .env settings.",
+                    "message": "Takealot API credentials not configured. Check plugin settings.",
                 },
                 status=500,
             )
 
-        api_endpoint = TAKEALOT_API_BASE_URL.rstrip("/") + "/stock/create_batch"
+        api_endpoint = api_endpoint.rstrip("/") + "/stock/create_batch"
         headers = {
-            "Authorization": f"Key {TAKEALOT_API_KEY}",
+            "Authorization": f"Key {api_key}",
             "Content-Type": "application/json",
         }
         try:
@@ -393,7 +377,7 @@ class LeadtimeOrderSyncPlugin(
             except Exception:
                 return datetime.date.today(), "Invalid date format provided. Using today's date."
         else:
-            return datetime.date.today(), "Date input is empty. Using today's date."
+            return datetime.date.today(), "Date input is undefined or empty. Using today's date."
 
     def read_csv_file(self, csv_file) -> str:
         """Read and decode CSV file content; raise exception if it fails."""
@@ -490,15 +474,19 @@ class LeadtimeOrderSyncPlugin(
             "target_date": target_date_str,
         }
 
-    def generate_batch_payload(self, matched_items: list) -> list:
+    def generate_batch_payload(self, matched_items: list) -> tuple[list, str]:
         """Generate the payload for the stock sync batch update."""
         batch_payload = []
+        warehouse_id = self.get_setting("TAKEALOT_WAREHOUSE_ID")
+        if warehouse_id == -1:
+            return [], "TakeALot Warehouse ID is not set"
+
         for item in matched_items:
             sku = item.get("sku") or ""
             new_soh = item.get("calculated_soh", 0)
-            leadtime_stock = [{"merchant_warehouse_id": LeadtimeOrderSyncPlugin.TAKEALOT_WAREHOUSE_ID, "quantity": new_soh}]
+            leadtime_stock = [{"merchant_warehouse_id": warehouse_id, "quantity": new_soh}]
             batch_payload.append({"sku": sku, "leadtime_stock": leadtime_stock})
-        return batch_payload
+        return batch_payload, ""
 
 
 
