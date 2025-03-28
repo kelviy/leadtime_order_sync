@@ -53,6 +53,7 @@ class LeadtimeOrderSyncPlugin(
             "name": "TakeALot API Key",
             "description": "TakeALot API key for intergrating with takealot api",
             "default": "",
+            "validator":"string",
             "required": True,
             "password": True,
         },
