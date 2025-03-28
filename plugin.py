@@ -145,13 +145,6 @@ class LeadtimeOrderSyncPlugin(
                 },
                 status=400,
             )
-        return JsonResponse(
-                {
-                    "success": False,
-                    "message": "No data to process. Please upload a CSV first.",
-                },
-                status=400,
-            )
         matched_items = data["matched_items"]
         target_date_str = data.get("target_date")
         # data is valid - else defualt value of today
