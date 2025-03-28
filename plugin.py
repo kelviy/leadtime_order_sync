@@ -55,7 +55,7 @@ class LeadtimeOrderSyncPlugin(
             "default": "",
             "validator":"string",
             "required": True,
-            "password": True,
+            "hidden": True,
         },
         "TAKEALOT_API_ENDPOINT": {
             "name": "TakeALot EndPoint URL",
@@ -67,10 +67,10 @@ class LeadtimeOrderSyncPlugin(
         "TAKEALOT_WAREHOUSE_ID": {
             "name": "TakeALot Unique Warehouse ID",
             "description": "TakeALot unique Warehouse ID",
-            "default": "",
-            "validator":"string",
+            "default": -1,
+            "validator":"int",
             "required": True,
-            "password": True,
+            "hidden": True,
         },
 
     }
