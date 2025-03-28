@@ -143,7 +143,7 @@ class LeadtimeOrderSyncPlugin(
                     "success": False,
                     "message": "No data to process. Please upload a CSV first.",
                 },
-                status=400,
+                status=200,
             )
         matched_items = data["matched_items"]
         target_date_str = data.get("target_date")
@@ -166,7 +166,7 @@ class LeadtimeOrderSyncPlugin(
                     "success": False,
                     "message": "Customer 'TakeALot' not found in database.",
                 },
-                status=400,
+                status=200,
             )
        
         # Create new Sales Order
@@ -178,7 +178,7 @@ class LeadtimeOrderSyncPlugin(
             logging.exception("SalesOrder creation failed")
             return JsonResponse(
                 {"success": False, "message": f"Failed to create Sales Order: {e}"},
-                status=500,
+                status=200,
             )
 
         # Default Stock location is valid else default None for shipment
@@ -239,7 +239,7 @@ class LeadtimeOrderSyncPlugin(
             order.delete()
             return JsonResponse(
                 {"success": False, "message": f"Error creating order line items: {e}"},
-                status=500,
+                status=200,
             )
 
         order_url = f"/order/sales-order/{order.pk}/"
@@ -264,7 +264,7 @@ class LeadtimeOrderSyncPlugin(
                     "success": False,
                     "message": "No data to sync. Please upload a CSV first.",
                 },
-                status=400,
+                status=200,
             )
         matched_items = data["matched_items"]
 
@@ -292,7 +292,7 @@ class LeadtimeOrderSyncPlugin(
                     "success": False, 
                     "message": "This functionality is not yet ready for production"+ "\nWhat would've been sent: " + str(batch_payload)
                 },
-                status=400
+                status=200
         )
 
 
@@ -302,7 +302,7 @@ class LeadtimeOrderSyncPlugin(
                     "success": False,
                     "message": "Takealot API credentials not configured. Check .env settings.",
                 },
-                status=500,
+                status=200,
             )
 
         api_endpoint = TAKEALOT_API_BASE_URL.rstrip("/") + "/stock/create_batch"
@@ -321,7 +321,7 @@ class LeadtimeOrderSyncPlugin(
                     "success": False,
                     "message": f"Failed to connect to Takealot API: {e}",
                 },
-                status=500,
+                status=200,
             )
         if 200 <= response.status_code < 300:
             try:
@@ -347,7 +347,7 @@ class LeadtimeOrderSyncPlugin(
                     "success": False,
                     "message": f"Takealot API error {response.status_code}: {error_detail}",
                 },
-                status=500,
+                status=200,
             )
     
     # -----------------------------
