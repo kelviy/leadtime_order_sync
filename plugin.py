@@ -12,7 +12,7 @@ from company.models import Company
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render
-from django.urls import path, reverse
+from django.urls import path
 from order.models import SalesOrder, SalesOrderAllocation, SalesOrderLineItem, SalesOrderShipment
 from part.models import Part
 from plugin import InvenTreePlugin
@@ -46,6 +46,19 @@ class LeadtimeOrderSyncPlugin(
             "name": "Default Stock Location",
             "description": "Default stock location (name) to allocate stock from",
             "model": "stock.stocklocation",
+            "default": "",
+            "required": True,
+        },
+        "TAKEALOT_API_KEY": {
+            "name": "TakeALot API Key",
+            "description": "TakeALot API key for intergrating with takealot api",
+            "default": "",
+            "required": True,
+            "password": True,
+        },
+        "TAKEALOT_ENDPOINT": {
+            "name": "TakeALot EndPoint URL",
+            "description": "TakeALot URL to access the api",
             "default": "",
             "required": True,
         }
