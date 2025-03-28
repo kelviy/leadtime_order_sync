@@ -57,17 +57,27 @@ class LeadtimeOrderSyncPlugin(
             "required": True,
             "password": True,
         },
-        "TAKEALOT_ENDPOINT": {
+        "TAKEALOT_API_ENDPOINT": {
             "name": "TakeALot EndPoint URL",
             "description": "TakeALot URL to access the api",
             "default": "",
+            "validator":"string",
             "required": True,
-        }
+        },
+        "TAKEALOT_WAREHOUSE_ID": {
+            "name": "TakeALot Unique Warehouse ID",
+            "description": "TakeALot unique Warehouse ID",
+            "default": "",
+            "validator":"string",
+            "required": True,
+            "password": True,
+        },
+
     }
     # Load Takealot API credentials from environment
-    TAKEALOT_API_KEY = os.getenv("TAKEALOT_API_KEY")
-    TAKEALOT_API_BASE_URL = os.getenv("TAKEALOT_API_BASE_URL")
-    TAKEALOT_WAREHOUSE_ID = os.getenv("TAKEALOT_WAREHOUSE_ID")
+    #TAKEALOT_API_KEY = os.getenv("TAKEALOT_API_KEY")
+    #TAKEALOT_API_BASE_URL = os.getenv("TAKEALOT_API_BASE_URL")
+    #TAKEALOT_WAREHOUSE_ID = os.getenv("TAKEALOT_WAREHOUSE_ID")
     def setup_urls(self):
         """Define custom URL endpoints for this plugin's views."""
         return [
