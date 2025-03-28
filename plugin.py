@@ -304,7 +304,7 @@ class LeadtimeOrderSyncPlugin(
         api_endpoint = self.get_setting("TAKEALOT_API_ENDPOINT")
         warehouse_id = self.get_setting("TAKEALOT_WAREHOUSE_ID")
 
-        if not api_key or not api_endpoint:
+        if not api_key or not api_endpoint or warehouse_id == -1:
             return JsonResponse(
                 {
                     "success": False,
