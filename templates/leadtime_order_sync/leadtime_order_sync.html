@@ -103,9 +103,9 @@
         {% if matched_items %}
             <h3 class="mb-3 mt-3">Matched Parts Table</h3>
             <!--Review Table (shown after CSV is parsed)-->
-            <div id="actionContainer" <!--for javascript for buttons-->
-                data-create-url="{% url 'plugin:leadtimeordersync:create-order' %}"
-                data-sync-url="{% url 'plugin:leadtimeordersync:sync-stock' %}">
+            <div id="actionContainer"
+                 data-create-url="{% url 'plugin:leadtimeordersync:create-order' %}"
+                 data-sync-url="{% url 'plugin:leadtimeordersync:sync-stock' %}">
                 <div class="card">
                     <div class="card-body p-2">
                         <form id="orderForm">
